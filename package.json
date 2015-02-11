@@ -1,0 +1,24 @@
+{
+  "name": "node-simple-uploader",
+  "version": "1.0.0",
+  "description": "Simple photo upload from folder to Rails app",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Vogon-IT/node-simple-uploader.git"
+  },
+  "author": "teemu.jonkkari",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Vogon-IT/node-simple-uploader/issues"
+  },
+  "homepage": "https://github.com/Vogon-IT/node-simple-uploader",
+  "dependencies": {
+    "request": "^2.53.0",
+    "request-json": "^0.5.2",
+    "rsvp": "^3.0.16"
+  }
+}
