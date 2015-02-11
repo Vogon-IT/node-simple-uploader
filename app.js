@@ -7,7 +7,7 @@ var fs = require('fs'),
 
 var config = require('./config');
 
-var lastestFile = '';
+var lastestFile = ''; // watch is buggy and can trigger multiple times for one file
 
 fs.exists(config.photoFolder, function(exists) {
   if (!exists) return console.log('ERROR! photoFolder not found.');
@@ -18,10 +18,9 @@ fs.watch(config.photoFolder, function(event, filename) {
 
   fs.exists(photo, function(exists) {
     if (!exists || !photo.match(/\.JPG$/i) || lastestFile == photo) return false;
-    console.log(photo);
     lastestFile = photo;
 
-    setTimeout(function() {
+    setTimeout(function() { // dont send broken photo
       var r = request.post(config.url + 'photos.json', function optionalCallback(err, res, body) {
         console.log(res.statusCode);
 
@@ -39,9 +38,6 @@ fs.watch(config.photoFolder, function(event, filename) {
       form.append('utf8', '✓');
       form.append('photo[image]', fs.createReadStream(photo));
     }, 1000);
-
-
-
   });
 });
 
