@@ -1,39 +1,37 @@
 var fs = require('fs'),
   util = require('util'),
-  // request = require('request-json'), // https://www.npmjs.com/package/request-json
   request = require('request'), // https://www.npmjs.com/package/request
-  jsdom = require('jsdom').jsdom, // https://www.npmjs.org/package/jsdom
-  RSVP = require('rsvp'); // promise https://www.npmjs.org/package/rsvp
+  config = require('./config');
 
-var config = require('./config');
+var lastestFile = ''; // watch is buggy and can trigger multiple times for one file with no reason
 
-var lastestFile = ''; // watch is buggy and can trigger multiple times for one file
-
+// check that photo folder folder exists
 fs.exists(config.photoFolder, function(exists) {
   if (!exists) return console.log('ERROR! photoFolder not found.');
 });
 
+// start watching photo folder for changes
 fs.watch(config.photoFolder, function(event, filename) {
   var photo = config.photoFolder + filename;
 
+  // upload photo to rails app if it still exists, is jpeg file and is not same file as most recent photo
   fs.exists(photo, function(exists) {
-    if (!exists || !photo.match(/\.JPG$/i) || lastestFile == photo) return false;
+    if (!exists || !photo.match(/\.jpg$/i) || lastestFile == photo) return false;
     lastestFile = photo;
 
-    setTimeout(function() { // dont send broken photo
+    setTimeout(function() { // don't send broken photo
       var r = request.post(config.url + 'photos.json', function optionalCallback(err, res, body) {
-        console.log(res.statusCode);
+        if (res) console.log('status code:', res.statusCode);
+        if (err) console.log('upload failed:', err);
 
-        if (err) {
-          return console.log('upload failed:', err);
-        }
-
-        if (res.statusCode === 201 && !config.keepImage) { // remove photo if response 201 OK
+        // remove photo if keep image is false and upload is successful
+        if (res.statusCode === 201 && !config.keepImage) {
           fs.unlink(photo);
         }
 
-      });
+      }).auth(config.username, config.password); // auth if 401
 
+      // set form data for upload
       var form = r.form();
       form.append('utf8', '✓');
       form.append('photo[image]', fs.createReadStream(photo));
