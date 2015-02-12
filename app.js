@@ -5,7 +5,7 @@ var fs = require('fs'),
 
 var lastestFile = ''; // watch is buggy and can trigger multiple times for one file with no reason
 
-// check that photo folder folder exists
+// check that photo folder exists
 fs.exists(config.photoFolder, function(exists) {
   if (!exists) return console.log('ERROR! photoFolder not found.');
 });
