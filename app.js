@@ -1,42 +1,45 @@
 var fs = require('fs'),
-  util = require('util'),
+  chokidar = require('chokidar'), // https://github.com/paulmillr/chokidar
   request = require('request'), // https://www.npmjs.com/package/request
   config = require('./config');
 
-var lastestFile = ''; // watch is buggy and can trigger multiple times for one file with no reason
-
-// check that photo folder exists
-fs.exists(config.photoFolder, function(exists) {
-  if (!exists) return console.log('ERROR! photoFolder not found.');
+var watcher = chokidar.watch(config.photoFolder, {
+  ignored: /[\/\\]\./, persistent: true
 });
 
-// start watching photo folder for changes
-fs.watch(config.photoFolder, function(event, filename) {
-  var photo = config.photoFolder + filename;
+var log = console.log.bind(console);
 
-  // upload photo to rails app if it still exists, is jpeg file and is not same file as most recent photo
-  fs.exists(photo, function(exists) {
-    if (!exists || !photo.match(/\.jpg$/i) || lastestFile == photo) return false;
-    lastestFile = photo;
+watcher
+.on('add', function(path) {
+    log('File', path, 'has been added');
 
-    setTimeout(function() { // don't send broken photo
-      var r = request.post(config.url + 'photos.json', function optionalCallback(err, res, body) {
-        if (res) console.log('status code:', res.statusCode);
-        if (err) console.log('upload failed:', err);
+    if (!path.match(/\.jpg$/i)) return false;
 
-        // remove photo if keep image is false and upload is successful
-        if (res.statusCode === 201 && !config.keepImage) {
-          fs.unlink(photo);
-        }
+    var r = request.post(config.url + 'photos.json', function optionalCallback(err, res, body) {
+      if (res) log('File', path, 'has uploaded. Status code', res.statusCode);
+      if (err) log('Upload failed:', err);
 
-      }).auth(config.username, config.password); // auth if 401
+      // remove photo if keep image is false and upload is successful
+      if (res.statusCode === 201 && !config.keepImage) {
+        fs.unlink(path);
+      }
 
-      // set form data for upload
-      var form = r.form();
-      form.append('utf8', '✓');
-      form.append('photo[image]', fs.createReadStream(photo));
-    }, 1000);
+    }).auth(config.username, config.password); // if 401
+
+    // set form data for upload
+    var form = r.form();
+    form.append('utf8', '✓');
+    form.append('photo[image]', fs.createReadStream(path));
+
+  })
+  .on('unlink', function(path) {
+    log('File', path, 'has been removed');
+  })
+  .on('error', function(error) {
+    log('Error happened', error);
+  })
+  .on('ready', function() {
+    log('Initial scan complete. Ready for changes.');
   });
-});
 
-console.log('node simple uploader started...');
+console.log('Node simple uploader started.');

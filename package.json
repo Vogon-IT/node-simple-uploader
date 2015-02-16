@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/Vogon-IT/node-simple-uploader",
   "dependencies": {
+    "chokidar": "^1.0.0-rc3",
     "request": "^2.53.0"
   }
 }
